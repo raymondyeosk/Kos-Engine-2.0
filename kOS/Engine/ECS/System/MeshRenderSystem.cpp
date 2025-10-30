@@ -52,7 +52,7 @@ namespace ecs {
             MeshFilterComponent* meshFilter = ecs->GetComponent<MeshFilterComponent>(id);
 
             // Skip entities not in this scene or hidden
-            if ((matRenderer->scene != scene) || !ecs->layersStack.m_layerBitSet.test(nameComp->Layer) || nameComp->hide)
+            if (!ecs->layersStack.m_layerBitSet.test(nameComp->Layer) || nameComp->hide)
                 continue;
 
             // Only send data if there is a mesh to render, this is probably redundant, the ECS already forces it
@@ -60,6 +60,7 @@ namespace ecs {
                 continue;
 
             std::shared_ptr<R_Material> mat= rm->GetResource<R_Material>(matRenderer->materialGUID);
+            if (!mat)return;;
             std::shared_ptr<R_Model> mesh = rm->GetResource<R_Model>(meshFilter->meshGUID);
             std::shared_ptr<R_Texture> diff = rm->GetResource<R_Texture>(mat->md.diffuseMaterialGUID);
             std::shared_ptr<R_Texture> spec = rm->GetResource<R_Texture>(mat->md.specularMaterialGUID);
