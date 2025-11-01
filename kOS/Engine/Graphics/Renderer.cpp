@@ -450,6 +450,9 @@ void ParticleRenderer::InitializeParticleRendererMeshes()
 
 	glBindBuffer(GL_ARRAY_BUFFER, basicParticleMesh.vboid);
 
+	constexpr int MAX_PARTICLES = 100000;
+	glBufferData(GL_ARRAY_BUFFER, MAX_PARTICLES * sizeof(BasicParticleInstance), nullptr, GL_DYNAMIC_DRAW);
+
 	GLsizei stride = sizeof(BasicParticleInstance);
 
 	glEnableVertexAttribArray(2);
@@ -474,13 +477,62 @@ void ParticleRenderer::InitializeParticleRendererMeshes()
 
 void ParticleRenderer::Render(const CameraData& camera, Shader& shader)
 {
+	if (!particlesToDraw.empty())
+	{
+		instancedBasicParticles.reserve(std::accumulate(particlesToDraw.begin(), particlesToDraw.end(), size_t(0),
+			[](size_t sum, const BasicParticleData& p) { return sum + p.particlePositions.size(); }));
+
+		for (const auto& p : particlesToDraw)
+		{
+			std::transform(p.particlePositions.begin(), p.particlePositions.end(),
+				std::back_inserter(instancedBasicParticles),
+				[&](const glm::vec3& pos) {
+					return BasicParticleInstance{ pos,p.scale, p.color, p.rotate };
+				});
+		}
+		particlesToDraw.clear();
+	}
 	shader.Use();
+	shader.SetTrans("projection", camera.GetPerspMtx());
+	shader.SetTrans("view", camera.GetViewMtx());
 	if (!instancedBasicParticles.empty())
 	{
+		GLenum err = glGetError();
+		if (err != GL_NO_ERROR) {
+			//LOGGING_ERROR("First OpenGL Error: 0x%X", err);h
+			std::cout << "before OpenGL Error: " << err << std::endl;
+		}
+		glEnable(GL_DEPTH_TEST);
+
+
 		glBindVertexArray(basicParticleMesh.vaoid);
 		glBindBuffer(GL_ARRAY_BUFFER, basicParticleMesh.vboid);
+
+
+		GLint boundBuffer = 0;
+		glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &boundBuffer);
+		///std::cout << "Bound VBO ID: " << boundBuffer
+		///	<< " expected: " << basicParticleMesh.vboid << std::endl;
+
+		err = glGetError();
+		if (err != GL_NO_ERROR) {
+			//LOGGING_ERROR("First OpenGL Error: 0x%X", err);h
+		std::cout << "after 1 OpenGL Error: " << err << std::endl;
+		}
 		glBufferSubData(GL_ARRAY_BUFFER, 0, instancedBasicParticles.size() * sizeof(BasicParticleInstance), instancedBasicParticles.data());
+		err = glGetError();
+		if (err != GL_NO_ERROR) {
+			//LOGGING_ERROR("First OpenGL Error: 0x%X", err);h
+			std::cout << "after 2 OpenGL Error: " << err << std::endl;
+		}
 		glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, instancedBasicParticles.size());
+		glDisable(GL_DEPTH_TEST);
+
+		err = glGetError();
+		if (err != GL_NO_ERROR) {
+			//LOGGING_ERROR("First OpenGL Error: 0x%X", err);h
+			std::cout << "after 3 OpenGL Error: " << err << std::endl;
+		}
 	}
 		
 }

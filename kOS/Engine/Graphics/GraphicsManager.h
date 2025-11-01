@@ -80,7 +80,7 @@ public:
 		skinnedMeshRenderer.skinnedMeshLookup[skinnedMeshRenderer.skinnedMeshesToDraw.back().entityID]
 			= &skinnedMeshRenderer.skinnedMeshesToDraw.back();
 	};
-	//inline void gm_PushParticleData( particleRenderer);
+	inline void gm_PushBasicParticleData(BasicParticleData&& basicParticleData) { particleRenderer.particlesToDraw.emplace_back(std::move(basicParticleData)); };
 
 	//Accessors
 	inline const FrameBuffer& gm_GetEditorBuffer() const { return framebufferManager.editorBuffer; };
@@ -106,6 +106,7 @@ private:
 	void gm_FillDepthCube(const CameraData& camera);
 	void gm_RenderCubeMap(const CameraData& camera);
 	void gm_RenderDebugObjects(const CameraData& camera);
+	void gm_RenderParticles(const CameraData& camera);
 	void gm_RenderUIObjects(const CameraData& camera);
 	//Cameras
 	CameraData editorCamera{};

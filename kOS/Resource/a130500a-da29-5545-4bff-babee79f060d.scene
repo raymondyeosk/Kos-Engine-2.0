@@ -4,5 +4,67 @@
             "skyBoxGUID": [],
             "ambientIntensity": 1.0
         }
+    },
+    {
+        "NameComponent": {
+            "entityName": "particle",
+            "Layer": 0,
+            "entityTag": "Default",
+            "isPrefab": false,
+            "prefabName": "",
+            "hide": false
+        },
+        "ParticleComponent": {
+            "duration": 4.300000190734863,
+            "looping": true,
+            "start_Lifetime": 3.9000000953674316,
+            "start_Velocity": 1.399999976158142,
+            "size": 1.2000000476837158,
+            "rotation": 0.0,
+            "color": {
+                "x": 7.800000190734863,
+                "y": 2.200000047683716,
+                "z": 2.799999952316284,
+                "w": 3.0999999046325684
+            },
+            "play_On_Awake": true,
+            "emissionInterval": 0.10000000149011612
+        },
+        "TransformComponent": {
+            "WorldTransformation": {
+                "position": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "rotation": {
+                    "x": 0.0,
+                    "y": -0.0,
+                    "z": 0.0
+                },
+                "scale": {
+                    "x": 1.0,
+                    "y": 1.0,
+                    "z": 1.0
+                }
+            },
+            "LocalTransformation": {
+                "position": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "rotation": {
+                    "x": 0.0,
+                    "y": -0.0,
+                    "z": 0.0
+                },
+                "scale": {
+                    "x": 1.0,
+                    "y": 1.0,
+                    "z": 1.0
+                }
+            }
+        }
     }
 ]
