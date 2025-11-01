@@ -39,7 +39,7 @@ namespace gui {
 	
     void ImGuiHandler::DrawPlayPauseBar() {
   //      static bool pause = true;
-        ecs::ECS* ecs = ecs::ECS::GetInstance();
+        ecs::ECS* ecs =ComponentRegistry::GetECSInstance();
 
 
   //      if(ecs->GetState() == ecs::STOP) {
@@ -59,9 +59,11 @@ namespace gui {
             if (ecs->GetState() == ecs::STOP || ecs->GetState() == ecs::WAIT) {
 
                 if(ImGui::Button("Play")) {
+                    if (ecs->GetState() == ecs::STOP) {
+                        scenes::SceneManager::m_GetInstance()->CacheCurrentScene();
+                    }
                     ecs->SetState(ecs::START);
                     ecs::AudioSystem::SetPaused(false);
-                    scenes::SceneManager::m_GetInstance()->CacheCurrentScene();
 				}
 
             }
