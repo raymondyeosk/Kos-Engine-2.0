@@ -10,11 +10,20 @@ public:
     std::string shield2;
     glm::vec3 vec3;
     glm::vec4 vec4;
-	utility::GUID guid;
+	utility::GUID Targetguid;
+	utility::GUID prefabGUID;
 
     void Start() override {
 
-		ecs::EntityID target = ecsPtr->GetEntityIDFromGUID(guid);
+		ecs::EntityID target = ecsPtr->GetEntityIDFromGUID(Targetguid);
+
+        std::shared_ptr<R_Scene> sceneResource = resource->GetResource<R_Scene>(prefabGUID);
+
+        if (sceneResource) {
+            std::cout << entity << std::endl;
+            std::string currentScene = ecsPtr->GetSceneByEntityID(entity);
+            sceneResource->DuplicatePrefabIntoScene(currentScene);
+        }
 
 
         health = 1;
@@ -39,5 +48,5 @@ public:
         }
     }
 
-    REFLECTABLE(PlayerScript, health, shield, healthbool, shield2, guid);
+    REFLECTABLE(PlayerScript, health, shield, healthbool, shield2, Targetguid, prefabGUID);
 };
