@@ -14,7 +14,7 @@ namespace gui {
         ImGuizmo::SetRect(renderPosX, renderPosY, renderWidth, renderHeight);
 
         static ImGuizmo::OPERATION mCurrentGizmoOperation(ImGuizmo::TRANSLATE);
-        static ImGuizmo::MODE mCurrentGizmoMode(ImGuizmo::LOCAL);
+        static ImGuizmo::MODE mCurrentGizmoMode(ImGuizmo::WORLD);
         static bool useSnap{ false };
         static float snap[3] = { 1.f, 1.f, 1.f };
 
@@ -53,12 +53,10 @@ namespace gui {
 
         if (ImGuizmo::IsUsing()) {
             glm::vec3 newPosition, newRotation, newScale;
-
             ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(transformation), glm::value_ptr(newPosition), glm::value_ptr(newRotation), glm::value_ptr(newScale));
             TransformSystem::SetImmediateWorldPosition(transComp, std::move(newPosition));
             TransformSystem::SetImmediateWorldRotation(transComp, std::move(newRotation));
             TransformSystem::SetImmediateWorldScale(transComp, std::move(newScale));
-            TransformSystem::CalculateAllTransform(transComp);
         }
     }
 }

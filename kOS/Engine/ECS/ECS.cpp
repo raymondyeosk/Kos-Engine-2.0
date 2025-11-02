@@ -194,7 +194,6 @@ namespace ecs{
 
 	EntityID ECS::DuplicateEntity(EntityID DuplicatesID, std::string scene) {
 
-
 		if (scene.empty()) {
 			const auto& result = GetSceneByEntityID(DuplicatesID);
 			if (result.empty()) {
@@ -208,25 +207,20 @@ namespace ecs{
 			}
 		}
 
-
 		EntityID NewEntity = CreateEntity(scene);
-
 		ComponentSignature DuplicateSignature = m_entityMap.find(DuplicatesID)->second;
 
 		for (const auto& [ComponentName, key] : m_componentKey) {
 			if (DuplicateSignature.test(key)) {
 				auto& action = componentAction.at(ComponentName);
-
 				auto* comp = action->DuplicateComponent(DuplicatesID, NewEntity);
 			}
 		}
 
 		m_entityMap.find(NewEntity)->second = DuplicateSignature;
 		RegisterEntity(NewEntity);
-
 		//checks if duplicates entity has parent and assign it
 		if (hierachy::GetParent(DuplicatesID).has_value()) {
-			//TransformComponent* transform = GetComponent<TransformComponent>(hierachy::GetParent(DuplicatesID).value());
 			//transform->m_childID.push_back(NewEntity);
 			auto parent = hierachy::GetParent(DuplicatesID).value();
 			hierachy::m_SetParent(parent, NewEntity);

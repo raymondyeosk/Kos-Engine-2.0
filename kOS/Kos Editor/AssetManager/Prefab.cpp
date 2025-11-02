@@ -84,6 +84,19 @@ namespace prefab
         return newId;
     }
 
+    // Recursive to align with how prefab children are also tagged as prefabs
+    // Not sure if setting prefabName will affect anything
+    // Currently only root parent has a prefabName
+    void SetPrefabStatus(ecs::EntityID id, bool status) {
+        ecs::ECS* ecs = ecs::ECS::GetInstance();
+        ecs::NameComponent* nc = ecs->GetComponent<ecs::NameComponent>(id);
+        nc->isPrefab = true;
+        ecs::TransformComponent* trans = ecs->GetComponent<ecs::TransformComponent>(id);
+        for (auto child : trans->m_childID) {
+            SetPrefabStatus(child, true);
+        }
+    }
+
     void m_SaveEntitytoPrefab(ecs::EntityID id)
     {
         ecs::ECS* ecs =ComponentRegistry::GetECSInstance();
@@ -102,7 +115,7 @@ namespace prefab
             count++;
         } while (ecs->sceneMap.find(filename) != ecs->sceneMap.end());
 
-        nc->isPrefab = true;
+        SetPrefabStatus(id, true);
         nc->prefabName = filename;
 
         std::string path = m_jsonFilePath + filename;

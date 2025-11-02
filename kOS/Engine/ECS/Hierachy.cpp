@@ -43,7 +43,7 @@ namespace hierachy {
 		}
 	}
 
-	void m_RemoveParent(EntityID child) {
+	void m_RemoveParent(EntityID child, bool updateTransform) {
 		// removes id from both the child and the parents vector
 		ECS* ecs = ECS::GetInstance();
 
@@ -66,9 +66,11 @@ namespace hierachy {
 		TransformComponent* childTransform = ecs->GetComponent<TransformComponent>(child);
 		childTransform->m_haveParent = false;
 		childTransform->m_parentID = 0;
-		// Updating Transformation Mtxs
-		childTransform->localTransform = childTransform->transformation;
-		utility::DecomposeMtxIntoTRS(childTransform->localTransform, childTransform->LocalTransformation.position, childTransform->LocalTransformation.rotation, childTransform->LocalTransformation.scale);
+		//Updating Transformation Mtxs
+		if (updateTransform) {
+			childTransform->localTransform = childTransform->transformation;
+			math::DecomposeMtxIntoTRS(childTransform->localTransform, childTransform->LocalTransformation.position, childTransform->LocalTransformation.rotation, childTransform->LocalTransformation.scale);
+		}
 	}
 
 	std::optional<EntityID> GetParent(EntityID child)

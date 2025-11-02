@@ -16,96 +16,249 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include "Editor.h"
+#include "Configs/ConfigPath.h"
 
-int style_idx = 0;
-const std::string editorConfigPath = "../Configs/EditorConfig.txt";
-
-// Will Probably Move this to json_handler.cpp
-// Will Probably switch to using rapidJSON or whichever serialization lib 
+// Serialization
 #include <fstream>
+#include <RAPIDJSON/document.h>
+#include <RAPIDJSON/writer.h>
+#include <RAPIDJSON/stringbuffer.h>
+#include <RAPIDJSON/prettywriter.h>
+
+void SerializeImVec4(std::string name, ImVec4 data, rapidjson::Value& keys, rapidjson::Document::AllocatorType& allocator) {
+    rapidjson::Value field;
+    field.SetString(name.c_str(), allocator);
+    keys.AddMember(field, rapidjson::Value().SetObject()
+        .AddMember("x", data.x, allocator)
+        .AddMember("y", data.y, allocator)
+        .AddMember("z", data.z, allocator)
+        .AddMember("w", data.w, allocator), allocator);
+}
+
+void SerializeImVec2(std::string name, ImVec2 data, rapidjson::Value& keys, rapidjson::Document::AllocatorType& allocator) {
+    rapidjson::Value field;
+    field.SetString(name.c_str(), allocator);
+    keys.AddMember(field, rapidjson::Value().SetObject()
+        .AddMember("x", data.x, allocator)
+        .AddMember("y", data.y, allocator), allocator);
+}
+
+void SerializeFloat(std::string name, float data, rapidjson::Value& keys, rapidjson::Document::AllocatorType& allocator) {
+    rapidjson::Value field;
+    field.SetString(name.c_str(), allocator);
+    keys.AddMember(field, data, allocator);
+}
+
+void SerializeInt(std::string name, int data, rapidjson::Value& keys, rapidjson::Document::AllocatorType& allocator) {
+    rapidjson::Value field;
+    field.SetString(name.c_str(), allocator);
+    keys.AddMember(field, data, allocator);
+}
+
+void DeserializeImVec4(std::string name, ImVec4& data, const rapidjson::Value& keys) {
+    if (keys.HasMember(name.c_str()) && keys[name.c_str()].IsObject()) {
+        const rapidjson::Value& vector = keys[name.c_str()];
+        if (vector.HasMember("x") && vector["x"].IsFloat()) {
+            data.x = vector["x"].GetFloat();
+        }
+        if (vector.HasMember("y") && vector["y"].IsFloat()) {
+            data.y = vector["y"].GetFloat();
+        }
+        if (vector.HasMember("z") && vector["z"].IsFloat()) {
+            data.z = vector["z"].GetFloat();
+        }
+        if (vector.HasMember("w") && vector["w"].IsFloat()) {
+            data.w = vector["w"].GetFloat();
+        }
+    }
+}
+
+void DeserializeImVec2(std::string name, ImVec2& data, const rapidjson::Value& keys) {
+    if (keys.HasMember(name.c_str()) && keys[name.c_str()].IsObject()) {
+        const rapidjson::Value& vector = keys[name.c_str()];
+        if (vector.HasMember("x") && vector["x"].IsFloat()) {
+            data.x = vector["x"].GetFloat();
+        }
+        if (vector.HasMember("y") && vector["y"].IsFloat()) {
+            data.y = vector["y"].GetFloat();
+        }
+    }
+}
+
+void DeserializeFloat(std::string name, float& data, const rapidjson::Value& keys) {
+    if (keys.HasMember(name.c_str()) && keys[name.c_str()].IsFloat()) {
+        data = keys[name.c_str()].GetFloat();
+    }
+}
+
+void DeserializeInt(std::string name, int& data, const rapidjson::Value& keys) {
+    if (keys.HasMember(name.c_str()) && keys[name.c_str()].IsInt()) {
+        data = keys[name.c_str()].GetInt();
+    }
+}
+
+template<typename EnumType>
+    requires std::is_enum_v<EnumType>
+void DeserializeEnumType(std::string name, EnumType& data, const rapidjson::Value& keys) {
+    if (keys.HasMember(name.c_str()) && keys[name.c_str()].IsInt()) {
+        data = static_cast<EnumType>(keys[name.c_str()].GetInt());
+    }
+}
+
 void SerializeProfile(ImGuiStyle* style) {
     if (!style) {
         LOGGING_INFO("No Style Ref");
         return;
     }
-    std::ofstream file(editorConfigPath);
+    
+    rapidjson::Document doc;
+    if (!doc.IsArray()) {
+        doc.SetArray();  // Initialize as an empty array
+    }
+    // Holy Shit this is really cursed
+    rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
+    rapidjson::Value data(rapidjson::kObjectType);
+    for (int i = 0; i < ImGuiCol_COUNT; i++) {
+        SerializeImVec4(std::string("Gui_Color " + std::to_string(i)), style->Colors[i], data, allocator);
+    }
+    SerializeImVec2("WindowPadding", style->WindowPadding, data, allocator);
+    SerializeImVec2("FramePadding", style->FramePadding, data, allocator);
+    SerializeImVec2("ItemSpacing", style->ItemSpacing, data, allocator);
+    SerializeImVec2("ItemInnerSpacing", style->ItemInnerSpacing, data, allocator);
+    SerializeImVec2("TouchExtraPadding", style->TouchExtraPadding, data, allocator);
+    SerializeFloat("IndentSpacing", style->IndentSpacing, data, allocator);
+    SerializeFloat("ScrollbarSize", style->ScrollbarSize, data, allocator);
+    SerializeFloat("GrabMinSize", style->GrabMinSize, data, allocator);
+    SerializeFloat("WindowBorderSize", style->WindowBorderSize, data, allocator);
+    SerializeFloat("ChildBorderSize", style->ChildBorderSize, data, allocator);
+    SerializeFloat("PopupBorderSize", style->PopupBorderSize, data, allocator);
+    SerializeFloat("FrameBorderSize", style->FrameBorderSize, data, allocator);
+    SerializeFloat("TabBorderSize", style->TabBorderSize, data, allocator);
+    SerializeFloat("TabBarBorderSize", style->TabBarBorderSize, data, allocator);
+    SerializeFloat("TabBarOverlineSize", style->TabBarOverlineSize, data, allocator);
+    SerializeFloat("WindowRounding", style->WindowRounding, data, allocator);
+    SerializeFloat("ChildRounding", style->ChildRounding, data, allocator);
+    SerializeFloat("FrameRounding", style->FrameRounding, data, allocator);
+    SerializeFloat("PopupRounding", style->PopupRounding, data, allocator);
+    SerializeFloat("ScrollbarRounding", style->ScrollbarRounding, data, allocator);
+    SerializeFloat("GrabRounding", style->GrabRounding, data, allocator);
+    SerializeFloat("TabRounding", style->TabRounding, data, allocator);
+    SerializeImVec2("CellPadding", style->CellPadding, data, allocator);
+    SerializeFloat("TableAngledHeadersAngle", style->TableAngledHeadersAngle, data, allocator);
+    SerializeImVec2("TableAngledHeadersTextAlign", style->TableAngledHeadersTextAlign, data, allocator);
+    SerializeImVec2("WindowTitleAlign", style->WindowTitleAlign, data, allocator);
+    SerializeInt("WindowMenuButtonPosition", style->WindowMenuButtonPosition, data, allocator);
+    SerializeFloat("ColorButtonPosition", style->ColorButtonPosition, data, allocator);
+    SerializeImVec2("ButtonTextAlign", style->ButtonTextAlign, data, allocator);
+    SerializeImVec2("SelectableTextAlign", style->SelectableTextAlign, data, allocator);
+    SerializeFloat("SeparatorTextBorderSize", style->SeparatorTextBorderSize, data, allocator);
+    SerializeImVec2("SeparatorTextAlign", style->SeparatorTextAlign, data, allocator);
+    SerializeImVec2("SeparatorTextPadding", style->SeparatorTextPadding, data, allocator);
+    SerializeFloat("LogSliderDeadzone", style->LogSliderDeadzone, data, allocator);
+    SerializeFloat("DockingSplitterSize", style->DockingSeparatorSize, data, allocator);
+    SerializeInt("HoverFlagsForTooltipMouse_ImGuiHoveredFlags_DelayNone", (style->HoverFlagsForTooltipMouse & ImGuiHoveredFlags_DelayNone) > 0, data, allocator);
+    SerializeInt("HoverFlagsForTooltipMouse_ImGuiHoveredFlags_DelayShort", (style->HoverFlagsForTooltipMouse & ImGuiHoveredFlags_DelayShort) > 0, data, allocator);
+    SerializeInt("HoverFlagsForTooltipMouse_ImGuiHoveredFlags_DelayNormal", (style->HoverFlagsForTooltipMouse & ImGuiHoveredFlags_DelayNormal) > 0, data, allocator);
+    SerializeInt("HoverFlagsForTooltipMouse_ImGuiHoveredFlags_Stationary", (style->HoverFlagsForTooltipMouse & ImGuiHoveredFlags_Stationary) > 0, data, allocator);
+    SerializeInt("HoverFlagsForTooltipMouse_ImGuiHoveredFlags_NoSharedDelay", (style->HoverFlagsForTooltipMouse & ImGuiHoveredFlags_NoSharedDelay) > 0, data, allocator);
+    SerializeInt("HoverFlagsForTooltipNav_ImGuiHoveredFlags_DelayNone", (style->HoverFlagsForTooltipNav & ImGuiHoveredFlags_DelayNone) > 0, data, allocator);
+    SerializeInt("HoverFlagsForTooltipNav_ImGuiHoveredFlags_DelayShort", (style->HoverFlagsForTooltipNav & ImGuiHoveredFlags_DelayShort) > 0, data, allocator);
+    SerializeInt("HoverFlagsForTooltipNav_ImGuiHoveredFlags_DelayNormal", (style->HoverFlagsForTooltipNav & ImGuiHoveredFlags_DelayNormal) > 0, data, allocator);
+    SerializeInt("HoverFlagsForTooltipNav_ImGuiHoveredFlags_Stationary", (style->HoverFlagsForTooltipNav & ImGuiHoveredFlags_Stationary) > 0, data, allocator);
+    SerializeInt("HoverFlagsForTooltipNav_ImGuiHoveredFlags_NoSharedDelay", (style->HoverFlagsForTooltipNav & ImGuiHoveredFlags_NoSharedDelay) > 0, data, allocator);
+    SerializeImVec2("DisplayWindowPadding", style->DisplayWindowPadding, data, allocator);
+    SerializeImVec2("DisplaySafeAreaPadding", style->DisplaySafeAreaPadding, data, allocator);
+    doc.PushBack(data, allocator);
+    
+    rapidjson::StringBuffer writeBuffer;
+    rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(writeBuffer);
+    doc.Accept(writer);
+    std::ofstream file(configpath::imguiStylePath);
     if (!file.is_open()) {
         LOGGING_WARN("Unable to Save Style Profile");
         file.close();
         return;
     }
-    file << "Index: " << style_idx << "\n";
-    for (int i = 0; i < ImGuiCol_COUNT; i++) {
-        file << ImGui::GetStyleColorName(i) << ' ' << style->Colors[i].x << ' ' << style->Colors[i].y << ' ' << style->Colors[i].z <<  ' ' << style->Colors[i].w << '\n';
+    else {
+        file << writeBuffer.GetString();
+        file.close();
     }
-    file << "WindowPadding " << style->WindowPadding.x << ' ' << style->WindowPadding.y << '\n';
-    file << "FramePadding " << style->FramePadding.x << ' ' << style->FramePadding.y << '\n';
-    file << "ItemSpacing " << style->ItemSpacing.x << ' ' << style->ItemSpacing.y << '\n';
-    file << "ItemInnerSpacing " << style->ItemInnerSpacing.x << ' ' << style->ItemInnerSpacing.y << '\n';
-    file << "TouchExtraPadding " << style->TouchExtraPadding.x << ' ' << style->TouchExtraPadding.y << '\n';
-    file << "IndentSpacing " << style->IndentSpacing << '\n';
-    file << "ScrollbarSize " << style->ScrollbarSize << '\n';
-    file << "GrabMinSize " << style->GrabMinSize << '\n';
-    file << "WindowBorderSize " << style->WindowBorderSize << '\n';
-    file << "ChildBorderSize " << style->ChildBorderSize << '\n';
-    file << "PopupBorderSize " << style->PopupBorderSize << '\n';
-    file << "FrameBorderSize " << style->FrameBorderSize << '\n';
-    file << "TabBorderSize " << style->TabBorderSize << '\n';
-    file << "TabBarBorderSize " << style->TabBarBorderSize << '\n';
-    file << "TabBarOverlineSize " << style->TabBarOverlineSize << '\n';
-    file << "WindowRounding " << style->WindowRounding << '\n';
-    file << "ChildRounding " << style->ChildRounding << '\n';
-    file << "FrameRounding " << style->FrameRounding << '\n';
-    file << "PopupRounding " << style->PopupRounding << '\n';
-    file << "ScrollbarRounding " << style->ScrollbarRounding << '\n';
-    file << "GrabRounding " << style->GrabRounding << '\n';
-    file << "TabRounding " << style->TabRounding << '\n';
-    file << "CellPadding " << style->CellPadding.x << ' ' << style->CellPadding.y << '\n';
-    file << "TableAngledHeadersAngle " << style->TableAngledHeadersAngle << '\n';
-    file << "TableAngledHeadersTextAlign " << style->TableAngledHeadersTextAlign.x << ' ' << style->TableAngledHeadersTextAlign.y << '\n';
-    file << "WindowTitleAlign " << style->WindowTitleAlign.x << ' ' << style->WindowTitleAlign.y << '\n';
-    file << "WindowMenuButtonPosition " << style->WindowMenuButtonPosition << '\n';
-    file << "ColorButtonPosition " << style->ColorButtonPosition << '\n';
-    file << "ButtonTextAlign " << style->ButtonTextAlign.x << ' ' << style->ButtonTextAlign.y << '\n';
-    file << "SelectableTextAlign " << style->SelectableTextAlign.x << ' ' << style->SelectableTextAlign.y << '\n';
-    file << "SeparatorTextBorderSize " << style->SeparatorTextBorderSize << '\n';
-    file << "SeparatorTextAlign " << style->SeparatorTextAlign.x << ' ' << style->SelectableTextAlign.y << '\n';
-    file << "SeparatorTextPadding " << style->SeparatorTextPadding.x << ' ' << style->SeparatorTextPadding.y << '\n';
-    file << "LogSliderDeadzone " << style->LogSliderDeadzone << '\n';
-    file << "DockingSplitterSize " << style->DockingSeparatorSize << '\n';
-    file << "HoverFlagsForTooltipMouse_ImGuiHoveredFlags_DelayNone " << ((style->HoverFlagsForTooltipMouse & ImGuiHoveredFlags_DelayNone) > 0) << '\n';
-    file << "HoverFlagsForTooltipMouse_ImGuiHoveredFlags_DelayShort " << ((style->HoverFlagsForTooltipMouse & ImGuiHoveredFlags_DelayShort) > 0) << '\n';
-    file << "HoverFlagsForTooltipMouse_ImGuiHoveredFlags_DelayNormal " << ((style->HoverFlagsForTooltipMouse & ImGuiHoveredFlags_DelayNormal) > 0) << '\n';
-    file << "HoverFlagsForTooltipMouse_ImGuiHoveredFlags_Stationary " << ((style->HoverFlagsForTooltipMouse & ImGuiHoveredFlags_Stationary) > 0) << '\n';
-    file << "HoverFlagsForTooltipMouse_ImGuiHoveredFlags_NoSharedDelay " << ((style->HoverFlagsForTooltipMouse & ImGuiHoveredFlags_NoSharedDelay) > 0) << '\n';
-    file << "HoverFlagsForTooltipNav_ImGuiHoveredFlags_DelayNone " << ((style->HoverFlagsForTooltipNav & ImGuiHoveredFlags_DelayNone) > 0) << '\n';
-    file << "HoverFlagsForTooltipNav_ImGuiHoveredFlags_DelayShort " << ((style->HoverFlagsForTooltipNav & ImGuiHoveredFlags_DelayShort) > 0) << '\n';
-    file << "HoverFlagsForTooltipNav_ImGuiHoveredFlags_DelayNormal " << ((style->HoverFlagsForTooltipNav & ImGuiHoveredFlags_DelayNormal) > 0) << '\n';
-    file << "HoverFlagsForTooltipNav_ImGuiHoveredFlags_Stationary " << ((style->HoverFlagsForTooltipNav & ImGuiHoveredFlags_Stationary) > 0) << '\n';
-    file << "HoverFlagsForTooltipNav_ImGuiHoveredFlags_NoSharedDelay " << ((style->HoverFlagsForTooltipNav & ImGuiHoveredFlags_NoSharedDelay) > 0) << '\n';
-    file << "DisplayWindowPadding " << style->DisplayWindowPadding.x << ' ' << style->DisplayWindowPadding.y << '\n';
-    file << "DisplaySafeAreaPadding " << style->DisplaySafeAreaPadding.x << ' ' << style->DisplaySafeAreaPadding.y << '\n';
-    file.close();
 }
 
-void DeserializeProfile() {
-    std::ifstream file(editorConfigPath);
+void gui::ImGuiHandler::DeserializeProfile() {
+    std::ifstream file(configpath::imguiStylePath);
     if (!file.is_open()) {
         LOGGING_WARN("Unable to Open File");
         file.close();
         return;
     }
-    std::string tmp;
-    std::vector<float> data;
-    while (std::getline(file, tmp)) {
-        size_t pos = tmp.find_first_of(' ');
-        while (pos != std::string::npos) {
-            std::string s(tmp, pos + 1, tmp.find_first_of(' ', pos + 1) - pos);
-            data.push_back(static_cast<float>(std::atof(s.c_str())));
-            pos = tmp.find_first_of(' ', pos + 1);
-        }
-    }
+    std::string fileContent((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    file.close();
+
+    rapidjson::Document doc;
+    doc.Parse(fileContent.c_str());
     ImGuiStyle& style = ImGui::GetStyle();
+    int counter = 0;
+    for (int i = 0; i < ImGuiCol_COUNT; i++)
+        DeserializeImVec4("Gui_Color " + std::to_string(i), style.Colors[i], doc[0]);
+    DeserializeImVec2("WindowPadding", style.WindowPadding, doc[0]);
+    DeserializeImVec2("FramePadding", style.FramePadding, doc[0]);
+    DeserializeImVec2("ItemSpacing", style.ItemSpacing, doc[0]);
+    DeserializeImVec2("ItemInnerSpacing", style.ItemInnerSpacing, doc[0]);
+    DeserializeImVec2("TouchExtraPadding", style.TouchExtraPadding, doc[0]);
+    DeserializeFloat("IndentSpacing", style.IndentSpacing, doc[0]);
+    DeserializeFloat("ScrollbarSize", style.ScrollbarSize, doc[0]);
+    DeserializeFloat("GrabMinSize", style.GrabMinSize, doc[0]);
+    DeserializeFloat("WindowBorderSize", style.WindowBorderSize, doc[0]);
+    DeserializeFloat("ChildBorderSize", style.ChildBorderSize, doc[0]);
+    DeserializeFloat("PopupBorderSize", style.PopupBorderSize, doc[0]);
+    DeserializeFloat("FrameBorderSize", style.FrameBorderSize, doc[0]);
+    DeserializeFloat("TabBorderSize", style.TabBorderSize, doc[0]);
+    DeserializeFloat("TabBarBorderSize", style.TabBarBorderSize, doc[0]);
+    DeserializeFloat("TabBarOverlineSize", style.TabBarOverlineSize, doc[0]);
+    DeserializeFloat("WindowRounding", style.WindowRounding, doc[0]);
+    DeserializeFloat("ChildRounding", style.ChildRounding, doc[0]);
+    DeserializeFloat("FrameRounding", style.FrameRounding, doc[0]);
+    DeserializeFloat("PopupRounding", style.PopupRounding, doc[0]);
+    DeserializeFloat("ScrollbarRounding", style.ScrollbarRounding, doc[0]);
+    DeserializeFloat("GrabRounding", style.GrabRounding, doc[0]);
+    DeserializeFloat("TabRounding", style.TabRounding, doc[0]);
+    DeserializeImVec2("CellPadding", style.CellPadding, doc[0]);
+    DeserializeFloat("TableAngledHeadersAngle", style.TableAngledHeadersAngle, doc[0]);
+    DeserializeImVec2("TableAngledHeadersTextAlign", style.TableAngledHeadersTextAlign, doc[0]);
+    DeserializeImVec2("WindowTitleAlign", style.WindowTitleAlign, doc[0]);
+    DeserializeEnumType("WindowMenuButtonPosition", style.WindowMenuButtonPosition, doc[0]);
+    DeserializeEnumType("ColorButtonPosition", style.ColorButtonPosition, doc[0]);
+    DeserializeImVec2("ButtonTextAlign", style.ButtonTextAlign, doc[0]);
+    DeserializeImVec2("SelectableTextAlign", style.SelectableTextAlign, doc[0]);
+    DeserializeFloat("SeparatorTextBorderSize", style.SeparatorTextBorderSize, doc[0]);
+    DeserializeImVec2("SeparatorTextAlign", style.SeparatorTextAlign, doc[0]);
+    DeserializeImVec2("SeparatorTextPadding", style.SeparatorTextPadding, doc[0]);
+    DeserializeFloat("LogSliderDeadzone", style.LogSliderDeadzone, doc[0]);
+    DeserializeFloat("DockingSplitterSize", style.DockingSeparatorSize, doc[0]);
+    int flag = 0;
+    DeserializeInt("HoverFlagsForTooltipMouse_ImGuiHoveredFlags_DelayNone", flag, doc[0]); 
+    if (flag) style.HoverFlagsForTooltipMouse |= ImGuiHoveredFlags_DelayNone;
+    DeserializeInt("HoverFlagsForTooltipMouse_ImGuiHoveredFlags_DelayShort", flag, doc[0]);
+    if (flag) style.HoverFlagsForTooltipMouse |= ImGuiHoveredFlags_DelayShort;
+    DeserializeInt("HoverFlagsForTooltipMouse_ImGuiHoveredFlags_DelayNormal", flag, doc[0]);
+    if (flag) style.HoverFlagsForTooltipMouse |= ImGuiHoveredFlags_DelayNormal;
+    DeserializeInt("HoverFlagsForTooltipMouse_ImGuiHoveredFlags_Stationary", flag, doc[0]);
+    if (flag) style.HoverFlagsForTooltipMouse |= ImGuiHoveredFlags_Stationary;
+    DeserializeInt("HoverFlagsForTooltipMouse_ImGuiHoveredFlags_NoSharedDelay", flag, doc[0]);
+    if (flag) style.HoverFlagsForTooltipMouse |= ImGuiHoveredFlags_NoSharedDelay;
+    DeserializeInt("HoverFlagsForTooltipNav_ImGuiHoveredFlags_DelayNone", flag, doc[0]);
+    if (flag) style.HoverFlagsForTooltipNav |= ImGuiHoveredFlags_DelayNone;
+    DeserializeInt("HoverFlagsForTooltipNav_ImGuiHoveredFlags_DelayShort", flag, doc[0]);
+    if (flag) style.HoverFlagsForTooltipNav |= ImGuiHoveredFlags_DelayShort;
+    DeserializeInt("HoverFlagsForTooltipNav_ImGuiHoveredFlags_DelayNormal", flag, doc[0]);
+    if (flag) style.HoverFlagsForTooltipNav |= ImGuiHoveredFlags_DelayNormal;
+    DeserializeInt("HoverFlagsForTooltipNav_ImGuiHoveredFlags_Stationary", flag, doc[0]);
+    if (flag) style.HoverFlagsForTooltipNav |= ImGuiHoveredFlags_Stationary;
+    DeserializeInt("HoverFlagsForTooltipNav_ImGuiHoveredFlags_NoSharedDelay", flag, doc[0]);
+    if (flag) style.HoverFlagsForTooltipNav |= ImGuiHoveredFlags_NoSharedDelay;
+    DeserializeImVec2("DisplayWindowPadding", style.DisplayWindowPadding, doc[0]);
+    DeserializeImVec2("DisplayWindowPadding", style.DisplayWindowPadding, doc[0]);
 }
 
 void Style_DefaultWhite(ImGuiStyle* dst = NULL)
@@ -183,10 +336,7 @@ void CustomStyleProfile(ImGuiStyle* dst = NULL) {
     if(ImGui::Button("Save Profile")) {
         SerializeProfile(&style);
     }
-    ImGui::SameLine();
-    if (ImGui::Button("Get Profile")) {
-        DeserializeProfile();
-    }
+
     ImGui::SeparatorText("Custom Profile");
     if (ImGui::BeginTabBar("##tabs", ImGuiTabBarFlags_DrawSelectedOverline)) {
         if (ImGui::BeginTabItem("Color")) {

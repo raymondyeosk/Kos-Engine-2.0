@@ -56,7 +56,6 @@ glm::mat4 CameraData::CalculateViewMtx() {
 const glm::mat4& CameraData::GetViewMtx() const { return viewMtx; }
 
 glm::mat4 CameraData::CalculatePerspMtx() {
-
     //Note: base these values for shadow mapping... thinking
     perspMtx = glm::perspective(glm::radians(fov), size.x / size.y, nearPlane, farPlane);
     return perspMtx;

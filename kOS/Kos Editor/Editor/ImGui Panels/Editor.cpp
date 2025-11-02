@@ -129,12 +129,11 @@ namespace gui {
 		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;// Enable Docking
 		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;// Enable Multi-Viewport / Platform Windows
 
-		SetStyle();
+		DeserializeProfile();
 
 		// Setup Platform/Renderer bindings
 		ImGui_ImplGlfw_InitForOpenGL(window, true);
 		ImGui_ImplOpenGL3_Init(glsl_version);
-
 
 		// load current layout
 		LoadLayout();

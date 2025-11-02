@@ -288,7 +288,7 @@ namespace gui {
                         hierachy::m_SetParent(ecs->sceneMap.find(m_activeScene)->second.prefabID, Id);
                     }
                     else {
-                        hierachy::m_RemoveParent(Id);
+                        hierachy::m_RemoveParent(Id, true);
                     }
                 }
 
@@ -381,7 +381,7 @@ namespace gui {
             if (ecs->HasComponent<ecs::CanvasRendererComponent>(id)
                 ||( hierachy::GetParent(m_clickedEntityId).has_value()&&
                     ecs->HasComponent<ecs::CanvasRendererComponent>(hierachy::GetParent(m_clickedEntityId).value()))) {
-                std::cout << "IS UI\n";
+                // std::cout << "IS UI\n";
                 m_isUi = true;
             }
         }
@@ -419,9 +419,7 @@ namespace gui {
             if (ImGui::MenuItem("Duplicate Entity")) {
                 ecs::EntityID newid = ecs->DuplicateEntity(id);
 
-                if (m_prefabSceneMode) {
-
-                    
+                if (m_prefabSceneMode) {                 
                     const auto& parent = hierachy::GetParent(id);
                     //if id does not have parent, make it the parent
                     if (!parent.has_value()) {
@@ -429,9 +427,7 @@ namespace gui {
                     }
                     else {
                         hierachy::m_SetParent(parent.value(), newid);
-                    }
-
-                   
+                    }                 
                 }
 
                 ImGui::EndPopup();

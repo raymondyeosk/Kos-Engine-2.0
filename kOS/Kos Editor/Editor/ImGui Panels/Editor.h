@@ -142,6 +142,7 @@ namespace gui {
         void m_UpdateOnPrefabMode();
         void openAndLoadSceneDialog();
 
+        void DeserializeProfile();
         void DrawPreferencesWindow();
 
         void DrawAnimationWindow();
