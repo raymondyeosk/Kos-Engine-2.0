@@ -35,6 +35,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "UIElements.h"
 #include "Model.h"
 #include "Camera.h"
+#include "Particle.h"
 #include <vector>
 #include "CubeMap.h"
 
@@ -122,3 +123,15 @@ private:
 	DebugFrustum debugFrustum;
 	DebugCube debugCube;
 };
+
+struct ParticleRenderer : BasicRenderer {
+	void InitializeParticleRendererMeshes();
+	void Render(const CameraData& camera, Shader& shader);
+	void Clear() override;
+	std::vector<BasicParticleData> particlesToDraw{};
+	std::vector<BasicParticleInstance> instancedBasicParticles{};
+
+private:
+	BasicParticleMesh basicParticleMesh;
+};
+

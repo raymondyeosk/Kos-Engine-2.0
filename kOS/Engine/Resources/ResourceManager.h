@@ -37,7 +37,7 @@ public:
         RegisterResourceType<R_Font>(".fntc");
 		RegisterResourceType<R_Texture>(".dds");
 		RegisterResourceType<R_Scene>(".scene");
-		RegisterResourceType<R_Animation>(".ani");
+		RegisterResourceType<R_Animation>(".anim");
 		RegisterResourceType<R_Audio>(".wav");
 		RegisterResourceType<R_Material>(".mat");
 		RegisterResourceType<R_DepthMapCube>(".dcm");
