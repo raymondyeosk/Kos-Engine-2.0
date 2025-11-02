@@ -298,6 +298,9 @@ void DrawFieldComponent(ecs::Component* component, const std::string& ComponentN
             else if (field.IsType<std::vector<glm::vec4>>()) {
                 draw(field.AsType<std::vector<glm::vec4>>());
             }
+            else if (field.IsType<utility::GUID>()) {
+                draw(field.AsType<utility::GUID>());
+            }
             else {
                 draw.count++;
             }
