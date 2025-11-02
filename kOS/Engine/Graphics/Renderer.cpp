@@ -418,6 +418,8 @@ void DebugRenderer::RenderDebugCubes(const CameraData& camera, Shader& shader)
 	{
 		shader.SetTrans("model", basicDebugCubes[i].worldTransform);
 		shader.SetFloat("uShaderType", 2.1f);
+		//shader.SetVec3("color", basicDebugCubes[i].color);
+		//std::cout << "COLOR: " << basicDebugCubes[i].color.r << ", " << basicDebugCubes[i].color.g << ", " << basicDebugCubes[i].color.b << std::endl;
 		debugCube.DrawMesh();
 	}
 }

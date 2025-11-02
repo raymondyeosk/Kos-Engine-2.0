@@ -27,27 +27,36 @@ namespace Octrees {
 
 		CalculateBounds();
 		CreateTree(minNodeSize);
-
 		GetEmptyLeaves(&root);
+		std::cout << "TESTSTSTSTST\n";
+		//for (Edge edge : graph.edges) {
+		//	std::cout << "EDGE2: from " << edge.a->octreeNode.bounds.center.x << ", "
+		//		<< edge.a->octreeNode.bounds.center.y << ", "
+		//		<< edge.a->octreeNode.bounds.center.z << "   to   "
+		//		<< edge.b->octreeNode.bounds.center.x << ", "
+		//		<< edge.b->octreeNode.bounds.center.y << ", "
+		//		<< edge.b->octreeNode.bounds.center.z << std::endl;
+		//}
+
 		GetEdges();
 	}
 
 	void Octree::GetEmptyLeaves(OctreeNode* node) {
-
 		if (node->IsLeaf() && !node->objects.size()) {
 			emptyLeaves.push_back(*node);
 			graph.AddNode(*node);
+
 			return;
 		}
 
 		if (node->children.empty()) {
-			// THIS MIGHT BE CAUSING ERRORS, IDK
-			//std::cout << "CHILD IS EMPTY\n";
 			return;
 		}
 
+		//std::cout << "CHILD SIZE: " << node->children.size() << " NODE ID: " << node->id << std::endl;
+
 		for (OctreeNode& child : node->children) {
-			//std::cout << "CALLING CHILD: " << child.bounds.center.x << ", " << child.bounds.center.y << ", " << child.bounds.center.z << std::endl;
+			//std::cout << "NODE ID BEING CHECKED: " << child.id << std::endl;
 			GetEmptyLeaves(&child);
 		}
 
@@ -56,13 +65,16 @@ namespace Octrees {
 				if (i == j)
 					continue;
 
-				//std::cout << "ADDING EDGE: " << node->children[i].bounds.center.x << ", " << node->children[i].bounds.center.y << ", " << node->children[i].bounds.center.z << " | " <<
-				//	node->children[j].bounds.center.x << ", " << node->children[j].bounds.center.y << ", " << node->children[j].bounds.center.z << std::endl;
+				//std::cout << "EDGE1: " << node->children[i].bounds.center.x << ", "
+				//	<< node->children[i].bounds.center.y << ", "
+				//	<< node->children[i].bounds.center.z << " to "
+				//	<< node->children[j].bounds.center.x << ", "
+				//	<< node->children[j].bounds.center.y << ", "
+				//	<< node->children[j].bounds.center.z << std::endl;
+				//std::cout << "Infinite? " << i << std::endl;
 				graph.AddEdge(&node->children[i], &node->children[j]);
 			}
 		}
-
-		std::cout << "\n";
 	}
 
 	void Octree::CreateTree(float minNodeSize) {
@@ -72,6 +84,9 @@ namespace Octrees {
 			ecs::BoxColliderComponent* boxCollider = ecs->GetComponent<ecs::BoxColliderComponent>(id.first);
 
 			if (!boxCollider)
+				continue;
+
+			if (ecs->GetComponent<ecs::PathfinderComponent>(id.first) || ecs->GetComponent<ecs::PathfinderTargetComponent>(id.first))
 				continue;
 
 			root.Divide(id.first);
@@ -89,8 +104,11 @@ namespace Octrees {
 			ecs::BoxColliderComponent* boxCollider = ecs->GetComponent<ecs::BoxColliderComponent>(id.first);
 			ecs::TransformComponent* transform = ecs->GetComponent<ecs::TransformComponent>(id.first);
 
-			if (!boxCollider)
+			if (!boxCollider || !transform)
 				continue;
+
+			//std::cout << "OBJECT MIN: " << boxCollider->box.bounds.min.x << ", " << boxCollider->box.bounds.min.y << ", " << boxCollider->box.bounds.min.z << std::endl;
+			//std::cout << "OBJECT MAX: " << boxCollider->box.bounds.max.x << ", " << boxCollider->box.bounds.max.y << ", " << boxCollider->box.bounds.max.z << std::endl;
 
 			if (boxCollider->box.bounds.min.x + transform->WorldTransformation.position.x < minBound.x) {
 				minBound.x = boxCollider->box.bounds.min.x + transform->WorldTransformation.position.x;
@@ -110,6 +128,8 @@ namespace Octrees {
 			if (boxCollider->box.bounds.max.z + transform->WorldTransformation.position.z > maxBound.z) {
 				maxBound.z = boxCollider->box.bounds.max.z + transform->WorldTransformation.position.z;
 			}
+
+			//bounds.rotation = transform->LocalTransformation.rotation;
 		}
 
 		boundCenter.x = (minBound.x + maxBound.x) / 2.f;
@@ -120,63 +140,42 @@ namespace Octrees {
 
 		bounds.center = boundCenter;
 		bounds.size = boundSize;
-		//bounds.SetMinMax(boundMin, boundMax);
+		bounds.SetMinMax(boundMin, boundMax);
 	}
 
 	void Octree::GetEdges() {
-		//std::cout << "EMPTY LEAVES COUNT: " << emptyLeaves.size();
-
 		for (OctreeNode leaf : emptyLeaves) {
-			//std::cout << "EMPTY LEAF CENTER: " << leaf.bounds.center.x << ", " << leaf.bounds.center.y << ", " << leaf.bounds.center.z << std::endl;
-			//std::cout << "EMPTY LEAF SIZE: " << leaf.bounds.size.x << "," << leaf.bounds.size.y << ", " << leaf.bounds.size.z << std::endl << std::endl;
 			for (OctreeNode otherLeaf : emptyLeaves) {
 				if (leaf == otherLeaf)
 					continue;
 
-				//if (leaf.bounds.Intersects(otherLeaf.bounds)) {
-				//	//std::cout << leaf.bounds.center.x <<  ", " << leaf.bounds.center.y << ", " << leaf.bounds.center.z << " INTERSECTING WITH "
-				//	//	<< otherLeaf.bounds.center.x << ", " << otherLeaf.bounds.center.y << ", " << otherLeaf.bounds.center.z << std::endl;
-				//	graph.AddEdge(&leaf, &otherLeaf);
-				//}
-
 				Bounds otherBounds = otherLeaf.bounds;
 				otherBounds.size *= 1.1f;
 					if (leaf.bounds.Intersects(otherBounds)) {
-					//std::cout << leaf.bounds.center.x <<  ", " << leaf.bounds.center.y << ", " << leaf.bounds.center.z << " INTERSECTING WITH "
-					//	<< otherLeaf.bounds.center.x << ", " << otherLeaf.bounds.center.y << ", " << otherLeaf.bounds.center.z << std::endl;
 					graph.AddEdge(&leaf, &otherLeaf);
 				}
 			}
 		}
 	}
 
-	//OctreeNode Octree::FindClosestNode(glm::vec3 position) {
-	//	FindClosestNode(root, position);
-	//}
+	OctreeNode Octree::FindClosestNode(glm::vec3 position) {
+		return FindClosestNode(root, position);
+	}
 
-	//OctreeNode Octree::FindClosestNode(OctreeNode node, glm::vec3 position) {
-	//	Octree found;
+	OctreeNode Octree::FindClosestNode(OctreeNode node, glm::vec3 position) {
+		OctreeNode foundNode;
 
-	//	for (int i = 0; i < node.children.size(); ++i) {
-	//		if(node.children[i].bounds)
-	//	}
-	//}
+		for (int i = 0; i < node.children.size(); ++i) {
+			if (node.children[i].bounds.Contains(position)) {
+				if (node.children[i].IsLeaf()) {
+					foundNode = node.children[i];
+					break;
+				}
 
-	OctreeNode Octree::GetClosestNode(glm::vec3 position) {
-		OctreeNode closestNode;
-
-		float closestDistanceSqr = std::numeric_limits<float>().max();
-
-		for (Node node : graph.nodes) {
-			OctreeNode octreeNode = node.octreeNode;
-			float distanceSqr = glm::length2(octreeNode.bounds.center - position);
-
-			if (distanceSqr < closestDistanceSqr) {
-				closestDistanceSqr = distanceSqr;
-				closestNode = octreeNode;
+				foundNode = FindClosestNode(node.children[i], position);
 			}
 		}
 
-		return closestNode;
+		return foundNode;
 	}
 }
