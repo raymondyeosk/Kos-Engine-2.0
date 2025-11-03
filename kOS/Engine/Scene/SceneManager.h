@@ -38,6 +38,11 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 
 namespace scenes {
 
+	struct PathActive {
+		std::filesystem::path path;
+		bool isActive;
+	};
+
 	class SceneManager {
 		ecs::ECS& m_ecs;
 		serialization::Serialization& m_serialization;
@@ -60,7 +65,9 @@ namespace scenes {
 		void ClearScene(const std::string& scene);
 		void SaveScene(const std::string& scene);
 
-		std::vector<std::filesystem::path> GetAllScenesPath();
+		// first is path, second is isActive
+		std::vector<PathActive> GetAllScenesPath();
+
 		void ClearAllSceneImmediate();
 
 		//Do not call this in the script
