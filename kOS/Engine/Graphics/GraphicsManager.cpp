@@ -24,8 +24,6 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "GraphicsManager.h"
 #include "Camera.h"
 
-std::shared_ptr<GraphicsManager> GraphicsManager::gm = std::make_shared<GraphicsManager>();
-
 //Variables to debug graphics
 namespace DebugGraphics {
 	std::map<std::string, Shader>shaderList;
