@@ -244,7 +244,8 @@ void gui::ImGuiHandler::DrawMainMenuBar() {
     m_scriptManager.RunDLL();
 
     for (const auto& scenepath : scenelist) {
-        m_sceneManager.LoadScene(scenepath);
+        m_sceneManager.ImmediateLoadScene(scenepath.path);
+		m_ecs.GetSceneData(scenepath.path.filename().string()).isActive = scenepath.isActive;
     }
 
 }

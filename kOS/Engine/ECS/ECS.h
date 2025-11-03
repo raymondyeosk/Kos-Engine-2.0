@@ -150,7 +150,7 @@ namespace ecs {
 			sceneMap[sceneName] = sceneData;
 		}
 
-		const SceneData& GetSceneData(const std::string& sceneName) {
+		SceneData& GetSceneData(const std::string& sceneName) {
 			return sceneMap.at(sceneName);
 		}
 
