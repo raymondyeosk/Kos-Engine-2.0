@@ -32,12 +32,11 @@ using namespace physics;
 
 namespace ecs {
 	void ColliderSystem::Init() {
-        onDeregister.Add([](EntityID id) {
-            ECS* ecs = ECS::GetInstance();
-            auto* box = ecs->GetComponent<BoxColliderComponent>(id);
-            auto* sphere = ecs->GetComponent<SphereColliderComponent>(id);
-            auto* capsule = ecs->GetComponent<CapsuleColliderComponent>(id);
-            auto* rb = ecs->GetComponent<RigidbodyComponent>(id);
+        onDeregister.Add([&](EntityID id) {
+            auto* box = m_ecs.GetComponent<BoxColliderComponent>(id);
+            auto* sphere = m_ecs.GetComponent<SphereColliderComponent>(id);
+            auto* capsule = m_ecs.GetComponent<CapsuleColliderComponent>(id);
+            auto* rb = m_ecs.GetComponent<RigidbodyComponent>(id);
             if (rb) {
                 if (box) { box->shape = nullptr; }
                 if (sphere) { sphere->shape = nullptr; }
@@ -90,21 +89,18 @@ namespace ecs {
     }
 
 	void ColliderSystem::Update() {
-		ECS* ecs = ECS::GetInstance();
 		const auto& entities = m_entities.Data();
 
-        auto pm = PhysicsManager::GetInstance();
-
         for (EntityID id : entities) {
-            TransformComponent* trans = ecs->GetComponent<TransformComponent>(id);
-            NameComponent* name = ecs->GetComponent<NameComponent>(id);
+            TransformComponent* trans = m_ecs.GetComponent<TransformComponent>(id);
+            NameComponent* name = m_ecs.GetComponent<NameComponent>(id);
 
             if (name->hide) { continue; }
             
-            RigidbodyComponent* rb = ecs->GetComponent<RigidbodyComponent>(id);
-            BoxColliderComponent* box = ecs->GetComponent<BoxColliderComponent>(id);
-            CapsuleColliderComponent* capsule = ecs->GetComponent<CapsuleColliderComponent>(id);
-            SphereColliderComponent* sphere = ecs->GetComponent<SphereColliderComponent>(id);
+            RigidbodyComponent* rb = m_ecs.GetComponent<RigidbodyComponent>(id);
+            BoxColliderComponent* box = m_ecs.GetComponent<BoxColliderComponent>(id);
+            CapsuleColliderComponent* capsule = m_ecs.GetComponent<CapsuleColliderComponent>(id);
+            SphereColliderComponent* sphere = m_ecs.GetComponent<SphereColliderComponent>(id);
 
             PxFilterData filter;
             filter.word0 = name->Layer;
@@ -116,7 +112,7 @@ namespace ecs {
                 PxShape* shape = static_cast<PxShape*>(box->shape);
                 PxBoxGeometry geometry{ halfExtents.x, halfExtents.y, halfExtents.z };
                 if (!shape) {
-                    shape = pm->GetPhysics()->createShape(geometry, *pm->GetDefaultMaterial(), true);
+                    shape = m_physicsManager.GetPhysics()->createShape(geometry, *m_physicsManager.GetDefaultMaterial(), true);
                     box->shape = shape;
                 } else {
                     shape->setGeometry(geometry);
@@ -137,7 +133,7 @@ namespace ecs {
                 PxShape* shape = static_cast<PxShape*>(sphere->shape);
                 PxSphereGeometry geometry{ radius };
                 if (!shape) {
-                    shape = pm->GetPhysics()->createShape(geometry, *pm->GetDefaultMaterial(), true);
+                    shape = m_physicsManager.GetPhysics()->createShape(geometry, *m_physicsManager.GetDefaultMaterial(), true);
                     sphere->shape = shape;
                 } else {
                     shape->setGeometry(geometry);
@@ -154,7 +150,7 @@ namespace ecs {
                 PxShape* shape = static_cast<PxShape*>(capsule->shape);
                 PxCapsuleGeometry geometry{ radius, halfHeight };
                 if (!shape) {
-                    shape = pm->GetPhysics()->createShape(geometry, *pm->GetDefaultMaterial(), true);
+                    shape = m_physicsManager.GetPhysics()->createShape(geometry, *m_physicsManager.GetDefaultMaterial(), true);
                     capsule->shape = shape;
                 } else {
                     shape->setGeometry(geometry);
@@ -187,9 +183,9 @@ namespace ecs {
                 PxTransform pxTrans{ PxVec3{ pos.x, pos.y, pos.z }, PxQuat{ rot.x, rot.y, rot.z, rot.w } };
 
                 if (!actor) {
-                    actor = pm->GetPhysics()->createRigidStatic(pxTrans);
+                    actor = m_physicsManager.GetPhysics()->createRigidStatic(pxTrans);
                     actor->userData = reinterpret_cast<void*>(static_cast<uintptr_t>(id));
-                    pm->GetScene()->addActor(*actor);
+                    m_physicsManager.GetScene()->addActor(*actor);
 
                     if (box) { box->actor = actor; }
                     if (sphere) { sphere->actor = actor; }

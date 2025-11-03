@@ -21,7 +21,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Editor.h"
 
 #include "ECS/ECS.h"
-#include "ECS/Hierachy.h"
+#include "ECS/ecs.h"
 #include "DeSerialization/json_handler.h"
 #include "Resources/ResourceManager.h"
 #include "Debugging/Logging.h"
@@ -31,16 +31,37 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 
 namespace gui {
 
+
+
     unsigned int ImGuiHandler::DrawHierachyWindow()
     {
-        //fetch ecs
-        ecs::ECS* ecs = ComponentRegistry::GetECSInstance();
-        scenes::SceneManager* scenemanager = scenes::SceneManager::m_GetInstance();
+        std::function<void(EntityID)> updateChildScene = [&](EntityID parent) {
+            std::string parentscene = m_ecs.GetSceneByEntityID(parent);
+            const auto& child = m_ecs.GetChild(parent);
+
+            if (child.has_value()) {
+                auto& children = child.value();
+                for (auto& childid : children) {
+                    // If child scene does not belong to parent scene, swap it
+                    std::string childscene = m_ecs.GetSceneByEntityID(childid);
+                    if (parentscene != childscene) {
+                        m_sceneManager.SwapScenes(childscene, parentscene, childid);
+                    }
+
+                    // Recursive call
+                    if (m_ecs.GetChild(childid).has_value()) {
+                        updateChildScene(childid);
+                    }
+                }
+            }
+            };
+
+
         //assetmanager::AssetManager* assetmanager = assetmanager::AssetManager::m_funcGetInstance();
         // Custom window with example widgets
         ImGui::Begin("Hierachy Window", nullptr, ImGuiWindowFlags_MenuBar);
 
-        //std::string ObjectCountStr = "Oject Count: " + std::to_string(ecs->m_ECS_EntityMap.size());
+        //std::string ObjectCountStr = "Oject Count: " + std::to_string(m_ecs_EntityMap.size());
         //ImGui::Text(ObjectCountStr.c_str());
 
         static std::string searchString;
@@ -66,17 +87,17 @@ namespace gui {
             if (ImGui::InputText("##", m_charBuffer, IM_ARRAYSIZE(m_charBuffer), ImGuiInputTextFlags_EnterReturnsTrue))
             {
                 if (!m_activeScene.empty()) {
-                    ecs::EntityID newEntityID = ecs->CreateEntity(m_activeScene);
+                    ecs::EntityID newEntityID = m_ecs.CreateEntity(m_activeScene);
 
                     //if in prefab mode, assign entity to upmost parent
                     if (m_prefabSceneMode) {
-                        ecs::EntityID id = ecs->sceneMap.find(m_activeScene)->second.prefabID;
-                        hierachy::m_SetParent(std::move(id), newEntityID);
+                        ecs::EntityID id = m_ecs.sceneMap.find(m_activeScene)->second.prefabID;
+                        m_ecs.SetParent(std::move(id), newEntityID);
                     }
 
                     m_clickedEntityId = newEntityID;
 
-                    ecs->GetComponent<ecs::NameComponent>(newEntityID)->entityName = std::string(m_charBuffer);
+                    m_ecs.GetComponent<ecs::NameComponent>(newEntityID)->entityName = std::string(m_charBuffer);
 
                     m_charBuffer[0] = '\0';
                     m_objectNameBox = false;
@@ -87,7 +108,7 @@ namespace gui {
             }
         }
 
-        for (auto& sceneentity : ecs->sceneMap)
+        for (auto& sceneentity : m_ecs.sceneMap)
         {
             //when prefab mode is on, skip non prefabs, and non active prefabs
             if (m_prefabSceneMode) {
@@ -97,20 +118,20 @@ namespace gui {
 
                 if (ImGui::Button("Back")) {
                     //save "prefab"
-                    scenemanager->SaveScene(m_activeScene);
+                    m_sceneManager.SaveScene(m_activeScene);
                     std::string prefabName = m_activeScene;
                     //set current prefab back to inactive
-                    scenemanager->SetSceneActive(m_activeScene, false);
+                    m_sceneManager.SetSceneActive(m_activeScene, false);
 
                     //set back scene's active state
-                    for (const auto& [scene, sceneData] : ecs->sceneMap) {
+                    for (const auto& [scene, sceneData] : m_ecs.sceneMap) {
                         if (sceneData.isPrefab == false) {
-                            scenemanager->SetSceneActive(scene, m_savedSceneState.find(scene)->second);
+                            m_sceneManager.SetSceneActive(scene, m_savedSceneState.find(scene)->second);
                         }
                     }
 
                     //set back active scene
-                    for (auto& scene : ecs->sceneMap) {
+                    for (auto& scene : m_ecs.sceneMap) {
                         if (!scene.second.isPrefab) {
                             m_activeScene = scene.first;
                             break;
@@ -123,12 +144,12 @@ namespace gui {
                     // Instead of Updating all the time, Differences needs to be checked.
                     // Prompt when leaving prefab mode, 
                     std::map<EntityID, std::vector<std::string>> allDiffList;
-                    const auto& prefabscene = ecs->sceneMap.find(prefabName);
-                    for (const auto& id : ecs->GetEntitySignatureData()) {
-                        ecs::NameComponent* nc = ecs->GetComponent<ecs::NameComponent>(id.first);
+                    const auto& prefabscene = m_ecs.sceneMap.find(prefabName);
+                    for (const auto& id : m_ecs.GetEntitySignatureData()) {
+                        ecs::NameComponent* nc = m_ecs.GetComponent<ecs::NameComponent>(id.first);
                         if (nc->isPrefab && (nc->prefabName == prefabName)) {
                             std::vector<std::string> diffList;
-                            prefab::RefreshComponentDifferenceList(diffList, id.first); 
+                            m_prefabManager.RefreshComponentDifferenceList(diffList, id.first); 
                             if (diffList.size()) allDiffList.emplace(id.first, diffList);
                         }
                     }
@@ -136,14 +157,14 @@ namespace gui {
                     for (auto& [id, diffList] : allDiffList) {
                         for (const auto& compName : diffList) {
                             if (compName == ecs::NameComponent::classname() || compName == ecs::TransformComponent::classname()) continue;
-                            prefab::RevertToPrefab_Component(id, compName, prefabName);
+                            m_prefabManager.RevertToPrefab_Component(id, compName, prefabName);
                         }
                     }
-                    //m_ecs->DeleteEntity(duppedID); // Dupping Somehow causes us to update all the prefab scenes?
+                    //m_ecs.DeleteEntity(duppedID); // Dupping Somehow causes us to update all the prefab scenes?
                     //duppedID = -1;
 
-                    //for (const auto& id : ecs->GetEntitySignatureData()) {
-                    //    ecs::NameComponent* nc = ecs->GetComponent<ecs::NameComponent>(id.first);
+                    //for (const auto& id : m_ecs.GetEntitySignatureData()) {
+                    //    ecs::NameComponent* nc = m_ecs.GetComponent<ecs::NameComponent>(id.first);
                     //    if (nc->isPrefab && (nc->prefabName == prefabName)) {
                     //        for (const auto& compName : diffList) {
                     //            if (compName == ecs::NameComponent::classname()) continue;
@@ -173,7 +194,7 @@ namespace gui {
 
             if (ImGui::BeginPopupContextItem()) {
                 if ((sceneentity.first != m_activeScene) && ImGui::MenuItem("Remove Scene")) {
-                    scenemanager->ClearScene(sceneentity.first);
+                    m_sceneManager.ClearScene(sceneentity.first);
 
                     //break loop
                     ImGui::EndPopup();
@@ -181,16 +202,16 @@ namespace gui {
                 }
 
                 if ((sceneentity.first != m_activeScene) && (sceneentity.second.isActive == true) && ImGui::MenuItem("Unload Scene")) {
-                    scenemanager->SetSceneActive(sceneentity.first, false);
+                    m_sceneManager.SetSceneActive(sceneentity.first, false);
                     m_clickedEntityId = -1;
 
                     if (!m_prefabSceneMode) {
                         //change scene if current active scene is unloaded
-                        if (ecs->sceneMap.find(m_activeScene)->second.isActive == false) {
+                        if (m_ecs.sceneMap.find(m_activeScene)->second.isActive == false) {
                             //set first loaded scene as active
-                            for (auto& scene : ecs->sceneMap) {
+                            for (auto& scene : m_ecs.sceneMap) {
                                 if (scene.second.isActive == true && scene.second.isPrefab == false) {
-                                    m_activeScene = ecs->sceneMap.begin()->first;
+                                    m_activeScene = m_ecs.sceneMap.begin()->first;
                                 }
 
                             }
@@ -202,7 +223,7 @@ namespace gui {
                 }
 
                 if ((sceneentity.second.isActive == false) && ImGui::MenuItem("load Scene")) {
-                    scenemanager->SetSceneActive(sceneentity.first, true);
+                    m_sceneManager.SetSceneActive(sceneentity.first, true);
                     ImGui::EndPopup();
                     break;
                 }
@@ -228,19 +249,19 @@ namespace gui {
                 {
                     IM_ASSERT(payload->DataSize == sizeof(ecs::EntityID));
                     ecs::EntityID Id = *static_cast<ecs::EntityID*>(payload->Data);
-                    const auto& scene = m_ecs->GetSceneByEntityID(Id);
+                    const auto& scene = m_ecs.GetSceneByEntityID(Id);
 
                     if (!scene.empty()) {
-                        scenemanager->SwapScenes(scene, sceneentity.first, Id);
+                        m_sceneManager.SwapScenes(scene, sceneentity.first, Id);
                     }
 
                     //if entity is a child, break from parent
-                    const auto& parent = hierachy::GetParent(Id);
+                    const auto& parent = m_ecs.GetParent(Id);
                     if (parent.has_value()) {
-                        hierachy::m_RemoveParent(Id);
+                        m_ecs.RemoveParent(Id);
                     }
 
-                    hierachy::m_UpdateChildScene(Id);
+                    updateChildScene(Id);
                 }
 
                 if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("file"))
@@ -249,7 +270,7 @@ namespace gui {
                     std::filesystem::path filename = static_cast<const char*>(payload->Data);
 
                     if (filename.filename().extension().string() == ".prefab") {
-                        prefab::m_CreatePrefab(filename.filename().string(), sceneentity.first);
+                        m_prefabManager.m_CreatePrefab(filename.filename().string(), sceneentity.first);
                     }
                 }
                 ImGui::EndDragDropTarget();
@@ -258,19 +279,19 @@ namespace gui {
             if (opens) {
                 for (auto entity : sceneentity.second.sceneIDs) {
 
-                    const auto& entityMap = m_ecs->GetEntitySignatureData();
+                    const auto& entityMap = m_ecs.GetEntitySignatureData();
                     if (entityMap.find(m_clickedEntityId) == entityMap.end()) {
                         m_clickedEntityId = entity;
                         m_isUi = false;
                     }
 
                     //search bar if if string not empty, must match the entity name
-                    ecs::NameComponent* nc = ecs->GetComponent<ecs::NameComponent>(entity);
+                    ecs::NameComponent* nc = m_ecs.GetComponent<ecs::NameComponent>(entity);
                     if (!searchString.empty() && !containsSubstring(nc->entityName, searchString))continue;
 
                     //draw parent entity node
                     //draw entity with no parents hahaha
-                    if (!hierachy::GetParent(entity).has_value()) {
+                    if (!m_ecs.GetParent(entity).has_value()) {
                         if (DrawEntityNode(entity) == false) {
                             //delete is called
                             break;
@@ -294,14 +315,14 @@ namespace gui {
                     ecs::EntityID Id = static_cast<EntityPayload*>(payload->Data)->id;
 
                     // if in prefab mode and parent does not have parent, reject
-                    if (m_prefabSceneMode && hierachy::GetParent(Id).has_value() && (!hierachy::GetParent(hierachy::GetParent(Id).value()).has_value())) {
+                    if (m_prefabSceneMode && m_ecs.GetParent(Id).has_value() && (!m_ecs.GetParent(m_ecs.GetParent(Id).value()).has_value())) {
 
                     }
                     if (m_prefabSceneMode) {
-                        hierachy::m_SetParent(ecs->sceneMap.find(m_activeScene)->second.prefabID, Id);
+                        m_ecs.SetParent(m_ecs.sceneMap.find(m_activeScene)->second.prefabID, Id);
                     }
                     else {
-                        hierachy::m_RemoveParent(Id, true);
+                        m_ecs.RemoveParent(Id, true);
                     }
                 }
 
@@ -315,11 +336,11 @@ namespace gui {
 
 
                     if (!m_prefabSceneMode && filePath.filename().extension().string() == ".json") {
-                        scenemanager->LoadScene(filePath);
+                        m_sceneManager.LoadScene(filePath);
                     }
 
                     if (!m_prefabSceneMode && filePath.filename().extension().string() == ".prefab") {
-                        prefab::m_CreatePrefab(filePath.filename().string(), m_activeScene);
+                        m_prefabManager.m_CreatePrefab(filePath.filename().string(), m_activeScene);
                     }
                 }
                 ImGui::EndDragDropTarget();
@@ -330,9 +351,29 @@ namespace gui {
     }
 
     bool ImGuiHandler::DrawEntityNode(ecs::EntityID id) {
-        ecs::ECS* ecs = ComponentRegistry::GetECSInstance();
 
-        ecs::TransformComponent* transCom = ecs->GetComponent<ecs::TransformComponent>(id);
+        std::function<void(EntityID)> updateChildScene = [&](EntityID parent) {
+            std::string parentscene = m_ecs.GetSceneByEntityID(parent);
+            const auto& child = m_ecs.GetChild(parent);
+
+            if (child.has_value()) {
+                auto& children = child.value();
+                for (auto& childid : children) {
+                    // If child scene does not belong to parent scene, swap it
+                    std::string childscene = m_ecs.GetSceneByEntityID(childid);
+                    if (parentscene != childscene) {
+                        m_sceneManager.SwapScenes(childscene, parentscene, childid);
+                    }
+
+                    // Recursive call
+                    if (m_ecs.GetChild(childid).has_value()) {
+                        updateChildScene(childid);
+                    }
+                }
+            }
+            };
+
+        ecs::TransformComponent* transCom = m_ecs.GetComponent<ecs::TransformComponent>(id);
         if (transCom == NULL) return false;
 
         ImGuiTreeNodeFlags flag = ((static_cast<unsigned int>(m_clickedEntityId) == id) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen;
@@ -340,7 +381,7 @@ namespace gui {
             flag |= ImGuiTreeNodeFlags_Leaf;
         }
 
-        ecs::NameComponent* nc = ecs->GetComponent<ecs::NameComponent>(id);
+        ecs::NameComponent* nc = m_ecs.GetComponent<ecs::NameComponent>(id);
 
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
         ImGui::InvisibleButton(std::string{ "##invireorderbutton" + std::to_string(id) }.c_str(), ImVec2{ ImGui::GetContentRegionAvail().x , 1.f });
@@ -353,12 +394,12 @@ namespace gui {
                 IM_ASSERT(payload->DataSize == sizeof(EntityPayload));
                 ecs::EntityID SwapId = static_cast<EntityPayload*>(payload->Data)->id;
 
-                const std::string swapScene = m_ecs->GetSceneByEntityID(SwapId);
-                const std::string idScene = m_ecs->GetSceneByEntityID(id);
+                const std::string swapScene = m_ecs.GetSceneByEntityID(SwapId);
+                const std::string idScene = m_ecs.GetSceneByEntityID(id);
 
                 if (SwapId != id && swapScene == idScene) {
 
-                    auto& _scene = ecs->sceneMap.find(swapScene)->second;
+                    auto& _scene = m_ecs.sceneMap.find(swapScene)->second;
                     const auto& eraseit = std::find(_scene.sceneIDs.begin(), _scene.sceneIDs.end(), SwapId);
 
                     if (eraseit != _scene.sceneIDs.end()) {
@@ -390,9 +431,9 @@ namespace gui {
             m_clickedEntityId = id;
             m_isUi = false;
             //Check if it houses any ui elements
-            if (ecs->HasComponent<ecs::CanvasRendererComponent>(id)
-                || (hierachy::GetParent(m_clickedEntityId).has_value() &&
-                    ecs->HasComponent<ecs::CanvasRendererComponent>(hierachy::GetParent(m_clickedEntityId).value()))) {
+            if (m_ecs.HasComponent<ecs::CanvasRendererComponent>(id)
+                || (m_ecs.GetParent(m_clickedEntityId).has_value() &&
+                    m_ecs.HasComponent<ecs::CanvasRendererComponent>(m_ecs.GetParent(m_clickedEntityId).value()))) {
                 // std::cout << "IS UI\n";
                 m_isUi = true;
             }
@@ -415,12 +456,12 @@ namespace gui {
         //draw context window
         if (ImGui::BeginPopupContextItem()) {
             //disable if the upmost prefab
-            if (m_prefabSceneMode && (id == ecs->sceneMap.find(m_activeScene)->second.prefabID)) {
+            if (m_prefabSceneMode && (id == m_ecs.sceneMap.find(m_activeScene)->second.prefabID)) {
 
             }
             else {
                 if (ImGui::MenuItem("Delete Entity")) {
-                    ecs->DeleteEntity(id);
+                    m_ecs.DeleteEntity(id);
                     m_clickedEntityId = -1;
                     ImGui::EndPopup();
                     if (open)ImGui::TreePop();
@@ -429,16 +470,16 @@ namespace gui {
             }
 
             if (ImGui::MenuItem("Duplicate Entity")) {
-                ecs::EntityID newid = ecs->DuplicateEntity(id);
+                ecs::EntityID newid = m_ecs.DuplicateEntity(id);
 
                 if (m_prefabSceneMode) {
-                    const auto& parent = hierachy::GetParent(id);
+                    const auto& parent = m_ecs.GetParent(id);
                     //if id does not have parent, make it the parent
                     if (!parent.has_value()) {
-                        hierachy::m_SetParent(id, newid);
+                        m_ecs.SetParent(id, newid);
                     }
                     else {
-                        hierachy::m_SetParent(parent.value(), newid);
+                        m_ecs.SetParent(parent.value(), newid);
                     }
                 }
 
@@ -449,7 +490,7 @@ namespace gui {
 
             if (ImGui::MenuItem("Create Prefab")) {
                 if (!m_prefabSceneMode) {
-                    prefab::m_SaveEntitytoPrefab(id);
+                   m_prefabManager.m_SaveEntitytoPrefab(id);
                 }
             }
 
@@ -464,18 +505,18 @@ namespace gui {
                 ecs::EntityID childId = static_cast<EntityPayload*>(payload->Data)->id;
 
                 // dont allow prefabs to be dragged inside prefab
-                const auto& childnc = ecs->GetComponent<ecs::NameComponent>(childId);
-                const auto& parent = ecs->GetComponent<ecs::NameComponent>(id);
+                const auto& childnc = m_ecs.GetComponent<ecs::NameComponent>(childId);
+                const auto& parent = m_ecs.GetComponent<ecs::NameComponent>(id);
 
                 if (!m_prefabSceneMode && childnc->isPrefab && (childnc->prefabName == parent->prefabName)) {
 
                     LOGGING_WARN("Unable to drag prefabs of same type into each other, pls go to prefab editor");
                 }
                 else {
-                    hierachy::m_SetParent(id, childId, true);
+                    m_ecs.SetParent(id, childId, true);
                     LOGGING_INFO("Set Parent: %d, Child: %d", id, childId);
                     // update child's scene
-                    hierachy::m_UpdateChildScene(id);
+                    updateChildScene(id);
 
                     //return
                     ImGui::EndDragDropTarget();
@@ -489,10 +530,10 @@ namespace gui {
         }
 
         //no reordering of child prefabs
-        if (!transCom->m_haveParent || !ecs->GetComponent<ecs::NameComponent>(transCom->m_parentID)->isPrefab ||
-            ecs->GetComponent<ecs::NameComponent>(transCom->m_parentID)->prefabName != nc->prefabName || m_prefabSceneMode) {
+        if (!transCom->m_haveParent || !m_ecs.GetComponent<ecs::NameComponent>(transCom->m_parentID)->isPrefab ||
+            m_ecs.GetComponent<ecs::NameComponent>(transCom->m_parentID)->prefabName != nc->prefabName || m_prefabSceneMode) {
             if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
-                auto* nc = m_ecs->GetComponent<ecs::NameComponent>(id);
+                auto* nc = m_ecs.GetComponent<ecs::NameComponent>(id);
                 if (nc) {
                     EntityPayload payload{ id, nc->entityGUID };
 

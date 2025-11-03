@@ -24,8 +24,6 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "GraphicsManager.h"
 #include "Camera.h"
 
-std::shared_ptr<GraphicsManager> GraphicsManager::gm = std::make_shared<GraphicsManager>();
-
 //Variables to debug graphics
 namespace DebugGraphics {
 	std::map<std::string, Shader>shaderList;
@@ -457,7 +455,7 @@ void GraphicsManager::gm_RenderDeferredObjects(const CameraData& camera)
 	//Fill point shadow stuff
 	for (int i = 0; i < lightRenderer.pointLightsToDraw.size(); i++) {
 		if (lightRenderer.pointLightsToDraw[i].bakedCon&& !lightRenderer.pointLightsToDraw[i].bakedmapGUID.Empty()) {
-			std::shared_ptr<R_DepthMapCube> dmc = ResourceManager::GetInstance()->GetResource<R_DepthMapCube>(lightRenderer.pointLightsToDraw[i].bakedmapGUID);
+			std::shared_ptr<R_DepthMapCube> dmc = m_resourceManager.GetResource<R_DepthMapCube>(lightRenderer.pointLightsToDraw[i].bakedmapGUID);
 			glActiveTexture(GL_TEXTURE7 + i);
 			glBindTexture(GL_TEXTURE_CUBE_MAP, dmc->dcm.RetrieveID());
 			deferredPBRShader->SetFloat("far_plane", dmc->dcm.far_plane);
