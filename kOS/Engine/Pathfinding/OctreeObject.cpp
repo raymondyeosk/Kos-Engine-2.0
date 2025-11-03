@@ -30,11 +30,12 @@ namespace Octrees {
 		bounds.min.y = ecs->GetComponent<ecs::BoxColliderComponent>(entityID)->box.bounds.min.y;
 		bounds.min.z = ecs->GetComponent<ecs::BoxColliderComponent>(entityID)->box.bounds.min.z;
 
-
-
-		glm::vec3 boundSize = glm::vec3(1.f, 1.f, 1.f) * std::max(std::max(ecs->GetComponent<ecs::BoxColliderComponent>(entityID)->box.bounds.max.x - ecs->GetComponent<ecs::BoxColliderComponent>(entityID)->box.bounds.min.x,
-			ecs->GetComponent<ecs::BoxColliderComponent>(entityID)->box.bounds.max.y - ecs->GetComponent<ecs::BoxColliderComponent>(entityID)->box.bounds.min.y),
-			ecs->GetComponent<ecs::BoxColliderComponent>(entityID)->box.bounds.max.z - ecs->GetComponent<ecs::BoxColliderComponent>(entityID)->box.bounds.min.z) * 0.5f;
+		ecs::BoxColliderComponent* boxComp = ecs->GetComponent<ecs::BoxColliderComponent>(entityID);
+		glm::vec3 boundSize = glm::vec3(1.f, 1.f, 1.f) * 
+			std::max(std::max(
+				 boxComp->box.bounds.max.x - boxComp->box.bounds.min.x,
+				boxComp->box.bounds.max.y - boxComp->box.bounds.min.y),
+				boxComp->box.bounds.max.z - boxComp->box.bounds.min.z) * 0.5f;
 
 		bounds.size.x = boundSize.x;
 		bounds.size.y = boundSize.y;

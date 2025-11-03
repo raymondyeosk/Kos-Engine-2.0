@@ -45,7 +45,7 @@ namespace Octrees {
 		OctreeNode();
 		OctreeNode(Bounds bounds, float minNodeSize);
 		void Divide(ecs::EntityID id);
-		void Divide(OctreeObject octreeObject);
+		void Divide(OctreeObject&& octreeObject);
 		void AddObject(OctreeObject octreeObject);
 		void DrawNode();
 

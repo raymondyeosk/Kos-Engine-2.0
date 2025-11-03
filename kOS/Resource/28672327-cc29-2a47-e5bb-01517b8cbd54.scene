@@ -1,12 +1,12 @@
 [
     {
         "SceneData": {
-            "collisionData": "",
             "skyBoxGUID": [],
             "ambientIntensity": 1.0
         }
     },
     {
+        "entityGUID": "095b47ff-44da-7bcb-1f8a-493bf22bb9ae",
         "BoxColliderComponent": {
             "isTrigger": false,
             "box": {
@@ -27,7 +27,8 @@
             "Layer": 0,
             "entityTag": "Default",
             "isPrefab": false,
-            "prefabName": ""
+            "prefabName": "",
+            "hide": false
         },
         "RigidbodyComponent": {
             "mass": 1.0,
@@ -77,6 +78,7 @@
         }
     },
     {
+        "entityGUID": "ad9330ed-1b96-405c-971c-088b9598b6d9",
         "BoxColliderComponent": {
             "isTrigger": false,
             "box": {
@@ -97,7 +99,8 @@
             "Layer": 0,
             "entityTag": "Default",
             "isPrefab": false,
-            "prefabName": ""
+            "prefabName": "",
+            "hide": false
         },
         "RigidbodyComponent": {
             "mass": 1.0,
@@ -147,6 +150,7 @@
         }
     },
     {
+        "entityGUID": "faee0a44-a92a-f2e7-f57f-d8e3ff774a20",
         "BoxColliderComponent": {
             "isTrigger": false,
             "box": {
@@ -167,7 +171,8 @@
             "Layer": 0,
             "entityTag": "Default",
             "isPrefab": false,
-            "prefabName": ""
+            "prefabName": "",
+            "hide": false
         },
         "RigidbodyComponent": {
             "mass": 1.0,
@@ -217,6 +222,7 @@
         }
     },
     {
+        "entityGUID": "4fccf18b-29f6-fb73-0abf-49580bf5d7fd",
         "BoxColliderComponent": {
             "isTrigger": false,
             "box": {
@@ -237,7 +243,8 @@
             "Layer": 0,
             "entityTag": "Default",
             "isPrefab": false,
-            "prefabName": ""
+            "prefabName": "",
+            "hide": false
         },
         "RigidbodyComponent": {
             "mass": 1.0,
@@ -287,6 +294,7 @@
         }
     },
     {
+        "entityGUID": "3eeddb0f-4475-993f-09cf-218d9afa1647",
         "BoxColliderComponent": {
             "isTrigger": false,
             "box": {
@@ -307,7 +315,8 @@
             "Layer": 0,
             "entityTag": "Default",
             "isPrefab": false,
-            "prefabName": ""
+            "prefabName": "",
+            "hide": false
         },
         "RigidbodyComponent": {
             "mass": 1.0,
@@ -357,6 +366,7 @@
         }
     },
     {
+        "entityGUID": "468f76f5-9b3e-4d31-ebd3-9aeeaaa97f69",
         "BoxColliderComponent": {
             "isTrigger": false,
             "box": {
@@ -377,7 +387,8 @@
             "Layer": 0,
             "entityTag": "Default",
             "isPrefab": false,
-            "prefabName": ""
+            "prefabName": "",
+            "hide": false
         },
         "RigidbodyComponent": {
             "mass": 1.0,
@@ -427,6 +438,7 @@
         }
     },
     {
+        "entityGUID": "ac2c8113-59fb-5bc3-220f-4a1529e0ee7c",
         "BoxColliderComponent": {
             "isTrigger": false,
             "box": {
@@ -447,7 +459,8 @@
             "Layer": 0,
             "entityTag": "Default",
             "isPrefab": false,
-            "prefabName": ""
+            "prefabName": "",
+            "hide": false
         },
         "RigidbodyComponent": {
             "mass": 1.0,

@@ -132,8 +132,8 @@ namespace ecs {
 				}
 
 				if (oct->drawWireframe) {
-					octree.root.DrawNode();
-					octree.graph.DrawGraph();
+					if (oct->drawBound) octree.root.DrawNode();
+					if (oct->drawNodes) octree.graph.DrawGraph();
 				}
 			}
 
