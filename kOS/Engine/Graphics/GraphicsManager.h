@@ -35,12 +35,10 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 
 class GraphicsManager
 {
-	ResourceManager& m_resourceManager;
 public:
 	//Singleton class, remove all copy and assignment operations
-	GraphicsManager(ResourceManager& rm):
-		m_resourceManager(rm)
-	{}
+	GraphicsManager() = default;
+
 	GraphicsManager(const GraphicsManager&) = delete;
 	GraphicsManager& operator=(const GraphicsManager&) = delete;
 	GraphicsManager(GraphicsManager&&) = delete;
