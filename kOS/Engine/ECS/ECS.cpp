@@ -168,7 +168,7 @@ namespace ecs{
 
 	}
 
-	EntityID ECS::CreateEntity(std::string scene) {
+	EntityID ECS::CreateEntity(const std::string& scene) {
 
 		EntityID ID = 0;
 		if (m_entityCount < MaxEntity) {
@@ -311,7 +311,13 @@ namespace ecs{
 		}
 
 		//delete guid off map
-		DeleteGUID(GetComponent<NameComponent>(ID)->entityGUID);
+		utility::GUID guid = GetComponent<NameComponent>(ID)->entityGUID;
+		if (!guid.Empty() && GetEntityIDFromGUID(guid) == ID) {
+			
+			DeleteGUID(guid);
+		}
+
+		
 
 		// reset all components
 		for (const auto& [ComponentName, key] : m_componentKey) {

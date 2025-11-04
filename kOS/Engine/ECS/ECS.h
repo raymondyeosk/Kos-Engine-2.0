@@ -72,7 +72,7 @@ namespace ecs {
 		void EndFrame();
 		void Unload();
 
-		EntityID CreateEntity(std::string scene);
+		EntityID CreateEntity(const std::string& scene);
 		EntityID DuplicateEntity(EntityID, std::string scene = {});
 		void DeleteEntity(EntityID);
 
@@ -124,7 +124,7 @@ namespace ecs {
 
 		//ENTITY DATA GETTERS
 		void InsertGUID(const utility::GUID& guid, ecs::EntityID id) {
-			m_GUIDtoEntityID.insert({ guid, id });
+			m_GUIDtoEntityID[guid] = id;
 		}
 
 		void DeleteGUID(const utility::GUID& guid) {

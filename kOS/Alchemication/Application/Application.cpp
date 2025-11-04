@@ -156,15 +156,12 @@ namespace Application {
                 /*--------------------------------------------------------------
                     UPDATE INPUT FRAME EXIT
                 --------------------------------------------------------------*/
-
                 input.InputExitFrame(deltaTime);
 
-                int fbw, fbh;
-                glfwGetFramebufferSize(lvWindow.window, &fbw, &fbh);
-                graphicsManager.gm_UpdateBuffers(fbw, fbh);
                 /*--------------------------------------------------------------
                     UPDATE Render Pipeline
                 --------------------------------------------------------------*/
+                graphicsManager.gm_UpdateBuffers(lvWindow.windowWidth, lvWindow.windowHeight);
                 graphicsManager.gm_Update();
 
                 /*--------------------------------------------------------------
@@ -179,17 +176,15 @@ namespace Application {
                 --------------------------------------------------------------*/
                 graphicsManager.gm_ResetFrameBuffer();
 
-
-                /*--------------------------------------------------------------
-                    ecs Endframe
-                --------------------------------------------------------------*/
-                ecs.EndFrame();
-
                 /*--------------------------------------------------------------
                     SceneManager EndFrame
                 --------------------------------------------------------------*/
                 sceneManager.EndFrame();
 
+                /*--------------------------------------------------------------
+                    ecs Endframe
+                --------------------------------------------------------------*/
+                ecs.EndFrame();
 
                 graphicsManager.gm_ClearGBuffer();
 
