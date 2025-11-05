@@ -51,7 +51,7 @@ struct SkinnedMeshData
 struct MeshData
 {
     std::shared_ptr<R_Model> meshToUse;
-    PBRMaterial meshMaterial;
+    std::shared_ptr<PBRMaterial> meshMaterial;
     glm::mat4 transformation{ 1.f };
     int entityID{ -1 };
 };

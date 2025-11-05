@@ -82,7 +82,7 @@ public:
 	//Accessors
 	inline const FrameBuffer& gm_GetEditorBuffer() const { return framebufferManager.editorBuffer; };
 	inline const FrameBuffer& gm_GetGameBuffer() const { return framebufferManager.gameBuffer; };
-	void gm_FillDepthCube(const CameraData&, int);
+	void gm_FillDepthCube(const CameraData&, int,glm::vec3 lighPos);
 	void gm_UpdateBuffers(int width, int height);
 	void gm_RenderGameBuffer();
 	//I want my DCMs

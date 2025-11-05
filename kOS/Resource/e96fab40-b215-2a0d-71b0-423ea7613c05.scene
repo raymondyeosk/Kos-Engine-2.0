@@ -81,9 +81,9 @@
             "cutOff": 5.5,
             "outerCutOff": 87.5999984741211,
             "intesnity": 150.10000610351563,
-            "shadowCast": true,
-            "bakedLighting": false,
-            "depthMapGUID": "ac7f4064-9a1b-9b28-4c5a-68a755864cbe"
+            "shadowCast": false,
+            "bakedLighting": true,
+            "depthMapGUID": "9703cbb8-22f7-e7d8-7f0b-1d6f25648c03"
         },
         "NameComponent": {
             "entityName": "test light",
