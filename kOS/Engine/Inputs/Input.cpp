@@ -1,16 +1,15 @@
 /******************************************************************/
 /*!
 \file      Input.cpp
-\author    Elijah Teo, teo.e , 2301530
-\par       teo.e@digipen.edu
-\date      16 Sept, 2024
+\author    Yeo See Kiat Raymond, seekiatraymond.yeo , 2301268
+\par       seekiatraymond.yeo@digipen.edu
 \brief     defines the class functions that contains all the callback functions that will be given to GLFW along with variables to hold the return values
 
 The header provides declarations for the Performance class functions that
 handle performance tracking and output for various engine systems such as
 movement, rendering, and collision.
 
-Copyright (C) 2024 DigiPen Institute of Technology.
+Copyright (C) 2026 DigiPen Institute of Technology.
 Reproduction or disclosure of this file or its contents without the
 prior written consent of DigiPen Institute of Technology is prohibited.
 */
